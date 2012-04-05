@@ -1,0 +1,336 @@
+\documentclass[11pt,onecolumn,a4paper]{ctexart}
+\usepackage[top=0.8in, bottom=1in, left=0.8in, right=0.8in]{geometry}
+\usepackage[sc]{mathpazo}
+\usepackage{SIunits,array,graphicx,amsmath,multirow,slashbox}
+\usepackage[bookmarksnumbered,bookmarksopen,colorlinks=false]{hyperref}
+
+%\usepackage[T1]{fontenc}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+
+<<setup,echo=FALSE,results=hide,message=FALSE,cache=FALSE>>=
+options(replace.assign=TRUE,width=90)
+knit_hooks$set(par=function(before, options, envir){if (before) par(mar=c(4,4,.1,.1),cex.lab=.95,cex.axis=.9,mgp=c(2,.7,0),tcl=-.3,las=1)})
+@
+
+\setCJKmainfont{WenQuanYi Micro Hei Mono}
+\setmainfont{DejaVu Sans Mono}
+\title{狗血清中PEGuox研究各项数据及图}
+\author{张弨}
+
+\maketitle
+
+\section{空白狗血清对尿酸标准曲线的影响}
+
+
+<<warning=F,highlight=T,tidy=T>>=
+library(ggplot2)
+options(digits=4)
+M <- c(0,0.1,0.2,0.3,0.4,0.5)
+# Abs of Dog A
+A1<- c(0.497,0.661,0.831,0.942,1.123,1.224)
+# Abs of Dog B 0900
+A2 <- c(0.455,NA,NA,0.949,1.095,1.221)
+# Abs of Dog B 1100
+A3 <- c(0.447,NA,NA,0.967,1.112,1.223)
+# Abs of Dog B 1300
+A4 <- c(0.451,NA,NA,0.935,1.094,1.237)
+# Abs of Dog B 1500
+A5 <- c(0.428,NA,NA,0.931,1.094,1.220)
+# Abs of Dog 7# 8h
+A6 <- c(0.558,NA,0.991,1.143,1.286,1.410)
+# Abs of Dog 8# 8h
+A7 <- c(0.552,NA,0.895,1.053,1.196,1.323)
+# Abs of Dog 8# 8h 2nd
+A8 <- c(0.552,NA,NA,1.040,1.210,1.332)
+# define the formulation of calculating slope and intercept
+k <- function(x)(as.list(coefficients(lm(x~M)))$M)
+@
+
+各血清样本的尿酸标准曲线图
+
+<<fig.cap="standard curves of different serum samples",warning=F,fig.keep=none>>=
+# linear models of different serum sample
+A <- data.frame(
+  ID=c(rep("Dog A",6),rep("Dog B 0900",6),rep("Dog B 1100",6),rep("Dog B 1300",6),rep("Dog B 1500",6),rep("Dog 7# 8h",6),rep("Dog 8# 8h",6),rep("Dog 8# 8h 2nd",6)),
+  Abs=c(A1,A2,A3,A4,A5,A6,A7,A8))
+qplot(M,A$Abs,geom=c("point","smooth"),colour=A$ID,method="lm",se=F)
+
+# scatter plot of slope
+k_all <- data.frame(
+  ID=c("DogA",rep("DogB",4),"Dog7#8h",rep("Dog8#8h",2)),
+  Slope=c(k(A1),k(A2),k(A3),k(A4),k(A5),k(A6),k(A7),k(A8))
+  )
+qplot(ID,Slope,data=k_all,colour=ID)
+@
+
+
+计算各斜率的标准差，得到：
+<<>>=
+# standard deviation of slope
+sd(k_all$Slope)
+@
+
+\section{PEGuox在狗血清中的稳定性}
+\subsection{冷冻条件下}
+
+
+<<fig.cap="time series of stability",fig.keep=none>>=
+# day of holding
+day <- c(0,1,8,15,31)
+# the uric acid standard Abs of each day
+A0 <- c(0.925,0.920,0.933,0.997,0.962)
+# low dose's uric acid Abs of each day
+Al <- c(0.861,0.801,mean(c(0.862,0.863)),mean(c(0.923,0.924)),mean(c(0.931,0.876)))
+# medium dose's uric acid Abs of each day
+Am <- c(0.758,0.759,mean(c(0.772,0.785)),mean(c(0.846,0.820)),mean(c(0.822,0.784)))
+# high dose's uric acid Abs of each day
+Ah <- c(0.520,0.541,mean(c(0.537,0.551)),mean(c(0.585,0.589)),mean(c(0.562,0.573)))
+# delta A
+deltaAl0 <-A0[1]-Al[1]
+deltaAm0 <-A0[1]-Am[1]
+deltaAh0 <- A0[1]-Ah[1]
+# time series of stability with line and point plot
+stab <- data.frame(
+  ID=c(rep("low dose",5),rep("medium dose",5),rep("high dose",5)),
+  percent=c((A0-Al)/deltaAl0,(A0-Am)/deltaAm0,(A0-Ah)/deltaAh0)
+  )
+qplot(day,stab$percent,geom=c("point","line"),colour=stab$ID,ylim=c(0.7,1.9),xlab="day",ylab="%")
+@
+
+
+
+\subsection{室温条件下}
+
+
+<<out.width=.9\linewidth,fig.keep=none>>=
+# hour of holding 
+hourb <- c(1,3,6)
+# the uric acid standard Abs of each hour
+A0_RTb <- c(1.127,1.078,1.074)
+# medium dose's uric acid Abs of each hour
+Am_RTb <- c(0.997,0.989,1.004)
+deltaA_RTb0 <- A0_RTb[1]-Am_RTb[1]
+persentA_RTb <- (A0_RTb-Am_RTb)/deltaA_RTb0
+qplot(hourb,persentA_RTb,geom=c("point","line"),xlab="hour",ylab="%")
+@
+
+
+
+<<out.width=.9\linewidth,fig.keep=none>>=
+# hour of holding 
+hourw <- c(0,1,2)
+# the uric acid standard Abs of each hour
+A0_RTw <- c(0.972,0.998,1.029)
+# medium dose's uric acid Abs of each hour
+Am_RTw <- c(0.756,0.757,0.771)
+deltaA_RTw0 <- A0_RTw[1]-Am_RTw[1]
+persentA_RTw <- (A0_RTw-Am_RTw)/deltaA_RTw0
+qplot(hourw,persentA_RTw,geom=c("point","line"),xlab="hour",ylab="%")
+@
+
+
+\section{狗血清中原生尿酸氧化酶活性研究}
+
+
+
+<<out.width=.9\linewidth,fig.keep=none>>=
+
+# the uric acid standard Abs of each serum sample
+A0_3 <- c(1.023,1.041,1.137,1.019,0.938,0.931,0.923)
+# the Abs of each serum sample after reaction
+A_3 <- c(1.025,mean(c(1.039,1.050)),mean(c(1.178,1.150)),mean(c(1.026,1.023)),mean(c(0.945,0.931)),mean(c(0.930,0.936)),mean(c(0.936,0.937)))
+# scatterplot of samples' name and each sample's A0 & A 
+Origin_uox <- data.frame(
+  label=c(rep("A0",7),rep("A",7)),
+  Abs <- c(A0_3,A_3),
+  ID=c("5# 0h","5# 4h","5# 8h","5# 12h", "6# 0h","7# 0h",   "8# 0h","5# 0h","5# 4h","5# 8h","5# 12h", "6# 0h","7# 0h",   "8# 0h")
+  )
+qplot(ID,Abs,data=Origin_uox,colour=label)
+@
+
+
+\section{检测限}
+\subsection{原方法}
+<<out.width=.9\linewidth,fig.keep=none,warning=F>>=
+library(ggplot2)
+# the uric acid standard Abs
+A0 <- mean(c(0.961,0.974,0.968))
+# the Abs of each serum sample after reaction
+A <- c(0.935,0.922,0.980,0.978,0.974,0.976,0.967,0.985)
+# scatterplot of samples' name and each sample's A0 & A 
+detect_limit <- data.frame(
+  label=c(rep("A0",4),rep("A",8)),
+  Abs <- c(rep(A0,4),A),
+  ID=c("5mg/L","1mg/L","0.5mg/L","0.25mg/L","5mg/L","5mg/L","1mg/L","1mg/L","0.5mg/L","0.5mg/L","0.25mg/L","0.25mg/L")
+  )
+qplot(ID,Abs,data=detect_limit,colour=label)
+@
+\subsection{ADHP}
+
+<<warning=F,fig.keep=none,message=F>>=
+#PEGuox (20120202) concentration
+conc <- c(50, 100, 200, 2000, 10000)
+# Abs after reacting 20min
+A_30 <- c(0.068, 0.087, 0.083, 0.189, 0.3865)
+# Abs after reacting 50min
+A_50 <- c(0.0765, 0.087, 0.0915, 0.2135, 0.422)
+# nonlinear regression
+library(nlrwr)
+ln.fit.30 <- nls(A_30~a*log(b+conc)+c,start=list(a=0.1,b=100,c=1),trace=T)
+coef(ln.fit.30)
+ln.fit.50 <- nls(A_50~a*log(b+conc)+c,start=list(a=0.1,b=100,c=1),trace=T)
+# define the function of conc & Abs
+a_30 <- as.list(coef(ln.fit.30))$a
+b_30 <- as.list(coef(ln.fit.30))$b
+c_30 <- as.list(coef(ln.fit.30))$c
+a_50 <- as.list(coef(ln.fit.30))$a
+b_50 <- as.list(coef(ln.fit.30))$b
+c_50 <- as.list(coef(ln.fit.30))$c
+ln_30 <- function(x){y=a_30*log(x+b_30)+c_30;y}
+ln_50 <- function(x){y=a_50*log(x+b_50)+c_50;y}
+
+qplot(conc,A_30,geom=c("point","smooth"),formula=y~ln_30(x),xlab="conc",ylab="A",span=1,se=F)
+qplot(conc,A_50,geom=c("point","smooth"),formula=y~ln_50(x),xlab="conc",ylab="A",span=1,se=F)
+@
+\section{ADHP}
+\subsection{标准曲线}
+<<warning=F,message=F>>=
+# Abs of serum
+A.serum <- mean(c(0.090,0.092))
+# concentration of peguox (20120202) ng/ml
+conc.peg <- c(100,200,500,1000,2000,5000,10000,20000,50000)
+# Abs of peguox
+A.peg <- c(mean(c(0.107,0.115)),mean(c(0.130,0.119)),mean(c(0.176,0.159)),mean(c(0.213,0.209)),mean(c(0.231,0.227)),mean(c(0.311,0.318)),mean(c(0.422,0.417)),mean(c(0.55,0.569)),mean(c(0.760,0.747)))
+deltaA.peg <- A.peg-A.serum
+# nonlinear regression of Abs & concentration of peguox 
+ln.peg <- nls(deltaA.peg~a*log(b+conc.peg)+c,start=list(a=0.1,b=100,c=1),trace=T)
+# concentration of H2O2 nM
+conc.h2o2 <- c(1,2,3,4,5,10,20,30,40)
+# Abs of H2O2
+A.h2o2 <- c(mean(c(0.153,0.156)),mean(c(0.206,0.218)),mean(c(0.292,0.293)),mean(c(0.328,0.320)),mean(c(0.436,0.392)),mean(c(0.631,0.666)),mean(c(1.037,1.004)),mean(c(1.378,1.330)),mean(c(1.506,1.468)))
+deltaA.h2o2 <- A.h2o2-A.serum
+# nonlinear regression of Abs & concentration of H2O2
+ln.h2o2 <- nls(deltaA.h2o2~a*log(b+conc.h2o2)+c,start=list(a=0.1,b=0,c=0),trace=T)
+# define the formula
+a.peg <- as.list(coef(ln.peg))$a
+b.peg <- as.list(coef(ln.peg))$b
+c.peg <- as.list(coef(ln.peg))$c
+a.h2o2 <- as.list(coef(ln.h2o2))$a
+b.h2o2 <- as.list(coef(ln.h2o2))$b
+c.h2o2 <- as.list(coef(ln.h2o2))$c
+ln.peg.f <- function(x){y=a.peg*log(x+b.peg)+c.peg;y}
+ln.h2o2.f <- function(x){y=a.h2o2*log(x+b.h2o2)+c.h2o2;y}
+# plot the curve
+qplot(conc.h2o2,deltaA.h2o2,geom=c("point","smooth"),formula=y~ln.h2o2.f(x),span=1,se=F)
+qplot(conc.peg,deltaA.peg,geom=c("point","smooth"),formula=y~ln.peg.f(x),span=1,se=F)
+##########################################################
+### compare of new & old h2o2
+# conc of h2o2
+conc.h2o2.neo <- c(2,5,10,20,40)
+# Abs of serum 0min
+A.serum.neo.0 <- mean(c(0.171,0.187))
+# Abs of new h2o2 0min
+A.h2o2.new.0 <- c(mean(c(0.287,0.307)),mean(c(0.490,0.469)),mean(c(0.750,0.717)),mean(c(1.147,1.129)),mean(c(1.555,1.59)))
+# Abs of old h2o2 0min
+A.h2o2.old.0 <- c(0.341,0.488,0.766,1.135,1.507)
+deltaA.h2o2.new.0 <- A.h2o2.new.0-A.serum.neo.0
+deltaA.h2o2.old.0 <- A.h2o2.old.0-A.serum.neo.0
+# nonlinear regression of Abs & concentration of new h2o2 0min
+ln.h2o2.new.0 <- nls(deltaA.h2o2.new.0~a*log(b+conc.h2o2.neo)+c,start=list(a=0.1,b=0,c=0),trace=T)
+a.h2o2.new.0 <- as.list(coef(ln.h2o2.new.0))$a
+b.h2o2.new.0 <- as.list(coef(ln.h2o2.new.0))$b
+c.h2o2.new.0 <- as.list(coef(ln.h2o2.new.0))$c
+ln.h2o2.new.0f <- function(x){y=a.h2o2.new.0*log(x+b.h2o2.new.0)+c.h2o2.new.0;y}
+# nonlinear regression of Abs & concentration of old h2o2 0min
+ln.h2o2.old.0 <- nls(deltaA.h2o2.old.0~a*log(b+conc.h2o2.neo)+c,start=list(a=0.1,b=0,c=0),trace=T)
+a.h2o2.old.0 <- as.list(coef(ln.h2o2.old.0))$a
+b.h2o2.old.0 <- as.list(coef(ln.h2o2.old.0))$b
+c.h2o2.old.0 <- as.list(coef(ln.h2o2.old.0))$c
+ln.h2o2.old.0f <- function(x){y=a.h2o2.old.0*log(x+b.h2o2.old.0)+c.h2o2.old.0;y}
+
+# Abs of serum 30min
+A.serum.neo.30 <- mean(c(0.264,0.284))
+# Abs of new h2o2 30min
+A.h2o2.new.30 <- c(mean(c(0.377,0.392)),mean(c(0.542,0.536)),mean(c(0.793,0.767)),mean(c(1.174,1.145)),mean(c(1.544,1.526)))
+# Abs of old h2o2 0min
+A.h2o2.old.30 <- c(0.439,0.589,0.831,1.214,1.488)
+deltaA.h2o2.new.30 <- A.h2o2.new.30-A.serum.neo.30
+deltaA.h2o2.old.30 <- A.h2o2.old.30-A.serum.neo.30
+# nonlinear regression of Abs & concentration of new h2o2 30min
+ln.h2o2.new.30 <- nls(deltaA.h2o2.new.30~a*log(b+conc.h2o2.neo)+c,start=list(a=0.1,b=0,c=0),trace=T)
+a.h2o2.new.30 <- as.list(coef(ln.h2o2.new.30))$a
+b.h2o2.new.30 <- as.list(coef(ln.h2o2.new.30))$b
+c.h2o2.new.30 <- as.list(coef(ln.h2o2.new.30))$c
+ln.h2o2.new.0f <- function(x){y=a.h2o2.new.30*log(x+b.h2o2.new.30)+c.h2o2.new.30;y}
+# nonlinear regression of Abs & concentration of old h2o2 30min
+ln.h2o2.old.30 <- nls(deltaA.h2o2.old.30~a*log(b+conc.h2o2.neo)+c,start=list(a=0.1,b=0,c=0),trace=T)
+a.h2o2.old.30 <- as.list(coef(ln.h2o2.old.30))$a
+b.h2o2.old.30 <- as.list(coef(ln.h2o2.old.30))$b
+c.h2o2.old.30 <- as.list(coef(ln.h2o2.old.30))$c
+ln.h2o2.old.0f <- function(x){y=a.h2o2.old.30*log(x+b.h2o2.old.30)+c.h2o2.old.30;y}
+# Abs of serum 75min
+A.serum.neo.75 <- mean(c(0.290,0.313))
+# Abs of new h2o2 75min
+A.h2o2.new.75 <- c(mean(c(0.409,0.417)),mean(c(0.564,0.558)),mean(c(0.778,0.786)),mean(c(1.168,1.151)),mean(c(1.514,1.521)))
+# Abs of old h2o2 75min
+A.h2o2.old.75 <- c(0.436,0.589,0.836,1.194,1.477)
+deltaA.h2o2.new.75 <- A.h2o2.new.75-A.serum.neo.75
+deltaA.h2o2.old.75 <- A.h2o2.old.75-A.serum.neo.75
+#plot
+h2o2.all <- data.frame(
+  Abs=c(deltaA.h2o2.new.0,deltaA.h2o2.old.0,deltaA.h2o2.new.30,deltaA.h2o2.old.30,deltaA.h2o2.new.75,deltaA.h2o2.old.75),
+  time=c(rep("0min",10),rep("30min",10),rep("75min",10)),
+  ID=c(rep("new h2o2",5),rep("old h2o2",5),rep("new h2o2",5),rep("old h2o2",5),rep("new h2o2",5),rep("old h2o2",5))
+  )
+qplot(conc.h2o2.neo,Abs,data=h2o2.all,color=ID,shape=time,geom=c("point","smooth"),span=1,se=F)
+
+#################################################################
+conc.peg.neo2 <- c(40000,10000,5000)
+conc.h2o2.neo2 <- c(20,10,5)
+# 5# 12h
+A.5.12h.serum <- 0.112
+A.5.12h.peg <- c(0.757,0.611,0.451)
+A.5.12h.h2o2 <- c(0.949,0.596,0.361)
+deltaA.5.12h.peg <- A.5.12h.peg-A.5.12h.serum
+deltaA.5.12h.h2o2 <- A.5.12h.h2o2-A.5.12h.serum
+# 6# 12h
+A.6.12h.serum <- 0.195
+A.6.12h.peg <- c(0.863,0.676,0.533)
+A.6.12h.h2o2 <- c(1.07,0.682,0.445)
+deltaA.6.12h.peg <- A.6.12h.peg-A.6.12h.serum
+deltaA.6.12h.h2o2 <- A.6.12h.h2o2-A.6.12h.serum
+# 8# 12h
+A.8.12h.serum <- 0.222
+A.8.12h.peg <- c(0.85,0.683,0.556)
+A.8.12h.h2o2 <- c(1.076,0.698,0.482)
+deltaA.8.12h.peg <- A.8.12h.peg-A.8.12h.serum
+deltaA.8.12h.h2o2 <- A.8.12h.h2o2-A.8.12h.serum
+# 5# 8h
+A.5.8h.serum <- 0.292
+A.5.8h.peg <- c(0.965,0.795,0.655)
+A.5.8h.h2o2 <- c(1.138,0.779,0.560)
+deltaA.5.8h.peg <- A.5.8h.peg-A.5.8h.serum
+deltaA.5.8h.h2o2 <- A.5.8h.h2o2-A.5.8h.serum
+# 6# 12h
+A.6.0h.serum <- 0.078
+A.6.0h.peg <- c(0.78,0.562,0.402)
+A.6.0h.h2o2 <- c(1.011,0.626,0.378)
+deltaA.6.0h.peg <- A.6.0h.peg-A.6.0h.serum
+deltaA.6.0h.h2o2 <- A.6.0h.h2o2-A.6.0h.serum
+# plot peg
+peg.all <- data.frame(Abs=c(deltaA.5.12h.peg,deltaA.6.12h.peg,deltaA.8.12h.peg,deltaA.5.8h.peg,deltaA.6.0h.peg),
+  ID=c(rep("5#12h",3),rep("6#12h",3),rep("8#12h",3),rep("5#8h",3),rep("6#0h",3))
+  )
+qplot(conc.peg.neo2,Abs,data=peg.all,geom=c("point","smooth"),span=1,se=F,color=ID)
+# plot h2o2
+h2o2.all.neo <- data.frame(Abs=c(deltaA.5.12h.h2o2,deltaA.6.12h.h2o2,deltaA.8.12h.h2o2,deltaA.5.8h.h2o2,deltaA.6.0h.h2o2),
+  ID=c(rep("5#12h",3),rep("6#12h",3),rep("8#12h",3),rep("5#8h",3),rep("6#0h",3))
+  )
+qplot(conc.h2o2.neo2,Abs,data=h2o2.all.neo,geom=c("point","smooth"),span=2,se=F,color=ID)
+
+################################################################
+
+@
+\end{document}
